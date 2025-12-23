@@ -1,55 +1,35 @@
 
-export enum AssetType {
-  POLICY = 'POLICY',
-  ETF = 'ETF',
-  STOCK = 'STOCK',
-  CASH = 'CASH',
-  REAL_ESTATE = 'REAL_ESTATE'
-}
-
 export interface Asset {
   id: string;
   name: string;
-  type: AssetType;
-  subType?: string;
-  startDate?: string;
-  marketValue: number; // 萬
-  cost: number; // 萬
-  accumulatedDividends: number; // 萬
-  loanPrincipal: number; // 萬
-  interestRate: number; // %
-  topUpThreshold: number; // 補繳 %
-  liquidationThreshold: number; // 斷頭 %
+  type: 'investment' | 'realestate' | 'cash';
+  marketValue: number;
+  cost: number;
+  annualDividend: number;
+  realizedDividend: number; // 已收配息金額
 }
 
-export interface FinanceData {
-  assets: Asset[];
-  realEstate: {
-    value: number;
-    mortgageBalance: number;
-    creditBalance: number;
-  };
-  liquidity: {
-    cash: number;
-    unusedCreditLine: number;
-    unusedPledge: number;
-  };
-  cashflow: {
-    activeIncome: number;
-    passiveIncome: number;
-    housingExpense: number;
-    livingExpense: number;
-    creditExpense: number;
-    insuranceExpense: number;
-    flexibleExpense: number;
-  };
-  settings: {
-    fireTarget: number;
-    showAmounts: boolean;
-    stressStock: number; 
-    stressInterest: number;
-    currency: string;
-  };
-  notes: string;
-  lastUpdate: string;
+export interface Liability {
+  id: string;
+  name: string;
+  type: 'mortgage' | 'credit' | 'pledge' | 'policy';
+  principal: number;
+  interestRate: number; // 2.1% = 0.021
+  relatedAssetId?: string; // For pledges
+  maintenanceThreshold?: number; // e.g. 1.4 for 140%
+}
+
+export interface IncomeExpense {
+  monthlyActiveIncome: number; // 工作收入
+  monthlyPassiveIncome: number; // 被動收入
+  monthlyMortgagePayment: number; // 房貸月還款
+  monthlyCreditPayment: number; // 信貸月還款
+  monthlyBaseLivingExpense: number; // 一般生活支出
+  fireGoal: number;
+  unusedCreditLimit: number;
+}
+
+export interface StressTestState {
+  marketCrash: number; // 0 to 0.5 (0% to 50%)
+  interestHike: number; // 0 to 0.02 (0% to 2%)
 }
