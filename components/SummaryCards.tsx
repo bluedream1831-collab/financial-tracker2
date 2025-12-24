@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { DollarSign, Wallet, Activity, Target, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DollarSign, Wallet, Activity, Target, ArrowUpRight, ArrowDownRight, Coins } from 'lucide-react';
 
 interface SummaryCardsProps {
   data: {
@@ -9,13 +9,14 @@ interface SummaryCardsProps {
     fireProgress: number;
     totalProfit: number;
     roi: number;
+    totalRealizedDividend: number;
   };
   fireGoal: number;
 }
 
 const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-6">
       <Card 
         title="真實淨資產" 
         value={`$${Math.round(data.netWorth / 10000).toLocaleString()}萬`} 
@@ -30,6 +31,13 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
         color={data.netCashFlow >= 0 ? 'emerald' : 'rose-plain'}
         description="本月預估現金流"
         trend={data.netCashFlow >= 0 ? 'up' : 'down'}
+      />
+      <Card 
+        title="累計息收總額" 
+        value={`$${Math.round(data.totalRealizedDividend / 10000).toLocaleString()}萬`} 
+        icon={<Coins className="w-3.5 h-3.5 sm:w-5 h-5" />}
+        color="amber"
+        description="所有資產已領配息加總"
       />
       <Card 
         title="FIRE 達成進度" 

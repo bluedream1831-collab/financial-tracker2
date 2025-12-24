@@ -28,21 +28,21 @@ import AIDiagnosisModal from './components/AIDiagnosisModal';
 const STORAGE_KEY = 'FINANCIAL_FREOM_DASHBOARD_DATA_V2';
 
 const initialAssets: Asset[] = [
-  { id: 'p1', name: '保單 A (法巴年金)', type: 'investment', marketValue: 477000, cost: 500000, annualDividend: 0, realizedDividend: 12000 },
-  { id: 'p2', name: '保單 B (法巴壽險)', type: 'investment', marketValue: 1477000, cost: 1500000, annualDividend: 0, realizedDividend: 35000 },
-  { id: 'p3', name: '保單 C (安達年金)', type: 'investment', marketValue: 1800000, cost: 1729999, annualDividend: 0, realizedDividend: 80000 },
-  { id: 'p4', name: '保單 D (安聯主力)', type: 'investment', marketValue: 3280000, cost: 3030000, annualDividend: 0, realizedDividend: 150000 },
-  { id: 's1', name: '股票質押貸款 (標的)', type: 'investment', marketValue: 2450000, cost: 1890000, annualDividend: 0, realizedDividend: 660000 },
+  { id: 'p1', name: '保單 A (法巴年金)', type: 'investment', marketValue: 477000, cost: 500000, annualDividend: 0, realizedDividend: 48208, purchaseDate: '2024-09-01' },
+  { id: 'p2', name: '保單 B (法巴壽險)', type: 'investment', marketValue: 1477000, cost: 1500000, annualDividend: 0, realizedDividend: 139927, purchaseDate: '2024-10-01' },
+  { id: 'p3', name: '保單 C (安達年金)', type: 'investment', marketValue: 1800000, cost: 1729999, annualDividend: 0, realizedDividend: 45305, purchaseDate: '2025-09-01' },
+  { id: 'p4', name: '保單 D (安聯主力)', type: 'investment', marketValue: 3280000, cost: 3030000, annualDividend: 0, realizedDividend: 120148, purchaseDate: '2025-07-01' },
+  { id: 's1', name: '股票質押貸款 (標的)', type: 'investment', marketValue: 2450000, cost: 1890000, annualDividend: 0, realizedDividend: 127126, purchaseDate: '2024-01-01' },
   { id: 'r1', name: '房產 (估值)', type: 'realestate', marketValue: 4700000, cost: 4700000, annualDividend: 0, realizedDividend: 0 },
   { id: 'c1', name: '活存備用金', type: 'cash', marketValue: 420000, cost: 420000, annualDividend: 0, realizedDividend: 0 },
 ];
 
 const initialLiabilities: Liability[] = [
-  { id: 'l1', name: '保單 A 借款', type: 'policy', principal: 200000, interestRate: 0.0317, relatedAssetId: 'p1', maintenanceThreshold: 0.5 },
-  { id: 'l2', name: '保單 B 借款', type: 'policy', principal: 650000, interestRate: 0.0317, relatedAssetId: 'p2', maintenanceThreshold: 0.5 },
-  { id: 'l3', name: '保單 C 借款', type: 'policy', principal: 790000, interestRate: 0.04, relatedAssetId: 'p3', maintenanceThreshold: 0.5 },
-  { id: 'l4', name: '保單 D 借款', type: 'policy', principal: 880000, interestRate: 0.04, relatedAssetId: 'p4', maintenanceThreshold: 0.5 },
-  { id: 'l6', name: '股票質押貸款', type: 'pledge', principal: 500000, interestRate: 0.03, relatedAssetId: 's1', maintenanceThreshold: 1.3 },
+  { id: 'l1', name: '保單 A 借款', type: 'policy', principal: 200000, interestRate: 0.0317, relatedAssetId: 'p1', maintenanceThreshold: 0.8, liquidateThreshold: 0.9 },
+  { id: 'l2', name: '保單 B 借款', type: 'policy', principal: 650000, interestRate: 0.0317, relatedAssetId: 'p2', maintenanceThreshold: 0.8, liquidateThreshold: 0.9 },
+  { id: 'l3', name: '保單 C 借款', type: 'policy', principal: 790000, interestRate: 0.04, relatedAssetId: 'p3', maintenanceThreshold: 0.8, liquidateThreshold: 0.9 },
+  { id: 'l4', name: '保單 D 借款', type: 'policy', principal: 880000, interestRate: 0.04, relatedAssetId: 'p4', maintenanceThreshold: 0.6, liquidateThreshold: 0.7 },
+  { id: 'l6', name: '股票質押貸款', type: 'pledge', principal: 500000, interestRate: 0.03, relatedAssetId: 's1', maintenanceThreshold: 1.4, liquidateThreshold: 1.3 },
   { id: 'l7', name: '房屋貸款', type: 'mortgage', principal: 4604000, interestRate: 0.021 },
   { id: 'l8', name: '信用貸款', type: 'credit', principal: 956000, interestRate: 0.035 },
 ];
@@ -76,7 +76,6 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 初始化讀取
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -97,7 +96,6 @@ const App: React.FC = () => {
     const dataToSave = { assets, liabilities, incomeExpense, lastSavedTime: now };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     
-    // 模擬存檔延遲感以提供視覺回饋
     setTimeout(() => {
       setIsSaving(false);
       setLastSavedTime(now);
@@ -105,62 +103,12 @@ const App: React.FC = () => {
     }, 600);
   };
 
-  // 當數據變更時標記為有未儲存內容，但不自動儲存
   useEffect(() => {
     if (!isLoaded) return;
     setHasUnsavedChanges(true);
   }, [assets, liabilities, incomeExpense]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleExportData = () => {
-    const data = { assets, liabilities, incomeExpense, exportDate: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `財務戰略核心_備份_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setMobileMenuOpen(false);
-  };
-
-  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = JSON.parse(e.target?.result as string);
-        if (!content.assets || !content.liabilities) throw new Error();
-        setAssets(content.assets);
-        setLiabilities(content.liabilities);
-        setIncomeExpense(content.incomeExpense);
-        alert("資料匯入成功！請點擊儲存按鈕寫入系統。");
-        setHasUnsavedChanges(true);
-      } catch (err) { alert("檔案格式不符。"); }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-    setMobileMenuOpen(false);
-  };
-
-  const handleResetData = () => {
-    if (confirm("確定要重置資料嗎？這將清空所有自定義內容。")) {
-      setAssets(initialAssets);
-      setLiabilities(initialLiabilities);
-      setIncomeExpense(initialIncomeExpense);
-      setStress({ marketCrash: 0, interestHike: 0 });
-      localStorage.removeItem(STORAGE_KEY);
-      setHasUnsavedChanges(false);
-      setMobileMenuOpen(false);
-      alert("數據已重置。");
-    }
-  };
-
-  const handleUpdateAsset = (id: string, field: 'marketValue' | 'cost' | 'realizedDividend', value: number) => {
+  const handleUpdateAsset = (id: string, field: string, value: any) => {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
   };
 
@@ -182,7 +130,8 @@ const App: React.FC = () => {
         principal: initialLoan,
         interestRate: 0.03,
         relatedAssetId: newAsset.id,
-        maintenanceThreshold: 0.5
+        maintenanceThreshold: 0.7,
+        liquidateThreshold: 0.8
       }]);
     }
   };
@@ -237,7 +186,8 @@ const App: React.FC = () => {
       investmentEquityDetails,
       adjustedAssets,
       monthlyTotalIncomeActive: incomeExpense.monthlyActiveIncome,
-      monthlyTotalExpense
+      monthlyTotalExpense,
+      totalRealizedDividend
     };
   }, [assets, liabilities, incomeExpense, stress]);
 
@@ -265,7 +215,7 @@ const App: React.FC = () => {
               <span className="hidden sm:inline">AI 診斷文本</span>
             </button>
 
-            <button onClick={handlePrint} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-rose-600 border border-rose-100 bg-rose-50 hover:bg-rose-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
+            <button onClick={() => window.print()} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-rose-600 border border-rose-100 bg-rose-50 hover:bg-rose-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">列印 PDF</span>
             </button>
@@ -278,25 +228,8 @@ const App: React.FC = () => {
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 sm:hidden text-slate-600">
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-
-            <div className="hidden sm:flex items-center gap-1 sm:gap-2">
-              <button onClick={handleExportData} title="匯出備份" className="p-2 sm:px-3 py-1.5 text-[10px] font-black text-slate-600 border border-slate-100 rounded-lg sm:rounded-xl bg-white"><Download className="w-4 h-4" /></button>
-              <button onClick={() => fileInputRef.current?.click()} title="匯入資料" className="p-2 sm:px-3 py-1.5 text-[10px] font-black text-slate-600 border border-slate-100 rounded-lg sm:rounded-xl bg-white"><Upload className="w-4 h-4" /></button>
-              <button onClick={handleResetData} title="重置數據" className="p-2 sm:px-3 py-1.5 text-[10px] font-black text-slate-300 hover:text-rose-600 border border-slate-100 rounded-lg sm:rounded-xl bg-white"><RotateCcw className="w-4 h-4" /></button>
-            </div>
           </div>
         </div>
-
-        {mobileMenuOpen && (
-          <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-orange-100 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-2xl">
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={handleExportData} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-100 font-black text-xs text-slate-600"><Download className="w-4 h-4" /> 匯出備份</button>
-              <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-100 font-black text-xs text-slate-600"><Upload className="w-4 h-4" /> 匯入資料</button>
-            </div>
-            <button onClick={handleResetData} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-rose-100 font-black text-xs text-rose-400"><RotateCcw className="w-4 h-4" /> 重置所有數據</button>
-          </div>
-        )}
-        <input type="file" ref={fileInputRef} onChange={handleImportData} className="hidden" accept=".json" />
       </header>
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
@@ -318,6 +251,7 @@ const App: React.FC = () => {
               assets={assets} liabilities={liabilities} 
               adjustedAssets={financialData.adjustedAssets}
               stress={stress}
+              totalRealizedDividend={financialData.totalRealizedDividend}
               onUpdateAsset={handleUpdateAsset} onUpdateLiability={handleUpdateLiability}
               onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset}
             />

@@ -7,6 +7,7 @@ export interface Asset {
   cost: number;
   annualDividend: number;
   realizedDividend: number; // 已收配息金額
+  purchaseDate?: string;    // 開始持有日期 (YYYY-MM-DD)
 }
 
 export interface Liability {
@@ -16,7 +17,8 @@ export interface Liability {
   principal: number;
   interestRate: number; // 2.1% = 0.021
   relatedAssetId?: string; // For pledges
-  maintenanceThreshold?: number; // e.g. 1.4 for 140%
+  maintenanceThreshold?: number; // 補繳線比例 (LTV)
+  liquidateThreshold?: number;    // 斷頭線比例 (LTV)
 }
 
 export interface IncomeExpense {
