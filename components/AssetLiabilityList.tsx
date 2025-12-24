@@ -110,7 +110,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
     hasLiability: false, principal: 0, interestRate: 0, type: 'credit' as const, topUpLine: 0, dangerLine: 0, liabilityId: null
   })) : [])];
 
-  const formatWan = (val: number) => `${(val / 10000).toFixed(1)}萬`;
+  const formatWan = (val: number) => `${Math.round(val / 10000).toLocaleString()}萬`;
 
   return (
     <div className="bg-white rounded-[1.2rem] sm:rounded-[2.5rem] border border-orange-100 shadow-xl overflow-hidden">
@@ -172,7 +172,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                 <h4 className="font-black text-xs text-slate-800 uppercase tracking-tight">{item.name.replace(' 借款', '')}</h4>
                 <div className="flex items-center gap-1.5 mt-0.5">
                    <span className={`text-[9px] font-black ${item.totalRoi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    總投報率 {item.totalRoi.toFixed(1)}%
+                    總投報率 {Math.round(item.totalRoi)}%
                   </span>
                   <span className="text-[8px] font-bold text-slate-300">/</span>
                   <span className="text-[9px] font-black text-slate-400">目前市值 {formatWan(item.adjustedAsset?.currentValue || 0)}</span>
@@ -194,6 +194,18 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                       className="w-full bg-transparent text-[11px] font-black text-slate-700 focus:outline-none"
                     />
                   </div>
+                  <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                    <label className="text-[8px] font-black text-slate-400 uppercase block mb-1 text-slate-400">原始投資成本</label>
+                    <input 
+                      type="number" 
+                      value={item.originalAsset?.cost || 0}
+                      onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'cost', Number(e.target.value))}
+                      className="w-full bg-transparent text-[11px] font-black text-slate-700 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
                   <div className="bg-rose-50/50 p-2 rounded-lg border border-rose-100">
                     <label className="text-[8px] font-black text-rose-400 uppercase block mb-1 flex items-center gap-1"><Coins className="w-2 h-2" /> 已領總息收</label>
                     <input 
@@ -273,7 +285,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                 <td className="px-6 py-6">
                   <div className="font-black text-slate-900">{item.name.replace(' 借款', '')}</div>
                   <div className={`text-[10px] font-bold mt-1 ${item.totalRoi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    總投報率: {item.totalRoi.toFixed(1)}% (含息)
+                    總投報率: {Math.round(item.totalRoi)}% (含息)
                   </div>
                 </td>
                 

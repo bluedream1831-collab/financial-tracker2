@@ -18,14 +18,14 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
       <Card 
         title="真實淨資產" 
-        value={`$${(data.netWorth / 10000).toFixed(1)}萬`} 
+        value={`$${Math.round(data.netWorth / 10000).toLocaleString()}萬`} 
         icon={<Wallet className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color="rose"
         description="總資產減總負債"
       />
       <Card 
         title="每月淨盈餘" 
-        value={`${data.netCashFlow >= 0 ? '+' : ''}${(data.netCashFlow / 10000).toFixed(2)}萬`} 
+        value={`${data.netCashFlow >= 0 ? '+' : ''}${Math.round(data.netCashFlow / 10000).toLocaleString()}萬`} 
         icon={<Activity className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color={data.netCashFlow >= 0 ? 'emerald' : 'rose-plain'}
         description="本月預估現金流"
@@ -33,18 +33,18 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
       />
       <Card 
         title="FIRE 達成進度" 
-        value={`${data.fireProgress.toFixed(1)}%`} 
+        value={`${Math.round(data.fireProgress)}%`} 
         icon={<Target className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color="amber"
         progress={data.fireProgress}
-        description={`目標 ${(fireGoal / 10000).toLocaleString()}萬`}
+        description={`目標 ${Math.round(fireGoal / 10000).toLocaleString()}萬`}
       />
       <Card 
         title="累計總損益" 
-        value={`$${(data.totalProfit / 10000).toFixed(1)}萬`} 
+        value={`$${Math.round(data.totalProfit / 10000).toLocaleString()}萬`} 
         icon={<DollarSign className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color={data.totalProfit >= 0 ? 'emerald' : 'rose-plain'}
-        description={`總投報率 ${data.roi.toFixed(1)}%`}
+        description={`總投報率 ${Math.round(data.roi)}%`}
         trend={data.totalProfit >= 0 ? 'up' : 'down'}
       />
     </div>

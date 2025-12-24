@@ -59,11 +59,11 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
     }
   ];
 
-  const formatWan = (val: number) => `${(val / 10000).toFixed(1)}萬`;
+  const formatWan = (val: number) => `${Math.round(val / 10000).toLocaleString()}萬`;
 
   const renderPieLabel = ({ name, percent, value }: any) => {
-    if (isMobile) return `${(percent * 100).toFixed(0)}%`;
-    return `${name} ${formatWan(value)} (${(percent * 100).toFixed(0)}%)`;
+    if (isMobile) return `${Math.round(percent * 100)}%`;
+    return `${name} ${formatWan(value)} (${Math.round(percent * 100)}%)`;
   };
 
   return (
@@ -77,7 +77,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
           <div className="h-[200px] sm:h-[280px] w-full relative">
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
               <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-tighter">總資產估值</span>
-              <span className="text-sm sm:text-lg font-black text-slate-900">${(totalAssetsValue / 10000).toFixed(0)}萬</span>
+              <span className="text-sm sm:text-lg font-black text-slate-900">${Math.round(totalAssetsValue / 10000).toLocaleString()}萬</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -110,7 +110,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
           <div className="h-[200px] sm:h-[280px] w-full relative">
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
               <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-tighter">總負債金額</span>
-              <span className="text-sm sm:text-lg font-black text-slate-900">${(totalLiabilitiesValue / 10000).toFixed(0)}萬</span>
+              <span className="text-sm sm:text-lg font-black text-slate-900">${Math.round(totalLiabilitiesValue / 10000).toLocaleString()}萬</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

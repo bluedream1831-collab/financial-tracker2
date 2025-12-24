@@ -15,13 +15,15 @@ import {
   Clock,
   Menu,
   X,
-  Printer
+  Printer,
+  FileText
 } from 'lucide-react';
 import { Asset, Liability, IncomeExpense, StressTestState } from './types';
 import SummaryCards from './components/SummaryCards';
 import FinancialCharts from './components/FinancialCharts';
 import StressTestSection from './components/StressTestSection';
 import AssetLiabilityList from './components/AssetLiabilityList';
+import AIDiagnosisModal from './components/AIDiagnosisModal';
 
 const STORAGE_KEY = 'FINANCIAL_FREOM_DASHBOARD_DATA_V2';
 
@@ -50,9 +52,9 @@ const initialIncomeExpense: IncomeExpense = {
   monthlyPassiveIncome: 55000,
   monthlyMortgagePayment: 31000,
   monthlyCreditPayment: 13000,
-  monthlyBaseLivingExpense: 20000,
+  monthlyBaseLivingExpense: 6000,
   fireGoal: 20000000,
-  unusedCreditLimit: 860000,
+  unusedCreditLimit: 360000,
 };
 
 const App: React.FC = () => {
@@ -62,6 +64,7 @@ const App: React.FC = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showLiquidityDetail, setShowLiquidityDetail] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
   const [liabilities, setLiabilities] = useState<Liability[]>(initialLiabilities);
@@ -256,6 +259,11 @@ const App: React.FC = () => {
               </span>
             </div>
 
+            <button onClick={() => setShowAIModal(true)} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-amber-600 border border-amber-100 bg-amber-50 hover:bg-amber-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">AI 診斷文本</span>
+            </button>
+
             <button onClick={handlePrint} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-rose-600 border border-rose-100 bg-rose-50 hover:bg-rose-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">列印 PDF</span>
@@ -355,7 +363,7 @@ const App: React.FC = () => {
                 <div className={`p-4 rounded-xl border-2 transition-colors duration-500 ${financialData.netCashFlow >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
                   <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-rose-200/60 mb-0.5 sm:mb-1">預估每月戰略盈餘</p>
                   <span className={`text-xl sm:text-3xl font-black ${financialData.netCashFlow >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    ${financialData.netCashFlow.toLocaleString()}
+                    ${Math.round(financialData.netCashFlow).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -403,6 +411,18 @@ const App: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {showAIModal && (
+        <AIDiagnosisModal 
+          isOpen={showAIModal} 
+          onClose={() => setShowAIModal(false)} 
+          assets={assets}
+          liabilities={liabilities}
+          incomeExpense={incomeExpense}
+          stress={stress}
+          financialData={financialData}
+        />
+      )}
     </div>
   );
 };
