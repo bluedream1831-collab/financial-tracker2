@@ -76,6 +76,7 @@ const App: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 初始化讀取
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -96,21 +97,19 @@ const App: React.FC = () => {
     const dataToSave = { assets, liabilities, incomeExpense, lastSavedTime: now };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     
+    // 模擬存檔延遲感以提供視覺回饋
     setTimeout(() => {
       setIsSaving(false);
       setLastSavedTime(now);
       setHasUnsavedChanges(false);
-    }, 800);
+    }, 600);
   };
 
+  // 當數據變更時標記為有未儲存內容，但不自動儲存
   useEffect(() => {
     if (!isLoaded) return;
     setHasUnsavedChanges(true);
-    const timeout = setTimeout(() => {
-      performSave();
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [assets, liabilities, incomeExpense, isLoaded]);
+  }, [assets, liabilities, incomeExpense]);
 
   const handlePrint = () => {
     window.print();
@@ -139,8 +138,8 @@ const App: React.FC = () => {
         setAssets(content.assets);
         setLiabilities(content.liabilities);
         setIncomeExpense(content.incomeExpense);
-        alert("資料匯入成功！系統已更新。");
-        performSave();
+        alert("資料匯入成功！請點擊儲存按鈕寫入系統。");
+        setHasUnsavedChanges(true);
       } catch (err) { alert("檔案格式不符。"); }
     };
     reader.readAsText(file);
@@ -149,13 +148,15 @@ const App: React.FC = () => {
   };
 
   const handleResetData = () => {
-    if (confirm("確定要重置資料嗎？")) {
+    if (confirm("確定要重置資料嗎？這將清空所有自定義內容。")) {
       setAssets(initialAssets);
       setLiabilities(initialLiabilities);
       setIncomeExpense(initialIncomeExpense);
       setStress({ marketCrash: 0, interestHike: 0 });
       localStorage.removeItem(STORAGE_KEY);
+      setHasUnsavedChanges(false);
       setMobileMenuOpen(false);
+      alert("數據已重置。");
     }
   };
 
@@ -252,10 +253,10 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 ${isSaving ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'}`}>
+            <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 ${isSaving ? 'bg-amber-50 border-amber-100' : (hasUnsavedChanges ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-100')}`}>
               {isSaving ? <Loader2 className="w-3 h-3 text-amber-500 animate-spin" /> : (hasUnsavedChanges ? <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> : <CheckCircle2 className="w-3 h-3 text-emerald-500" />)}
-              <span className={`text-[8px] font-black uppercase tracking-tighter ${hasUnsavedChanges ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {isSaving ? '同步中...' : (hasUnsavedChanges ? '待同步' : '已同步')}
+              <span className={`text-[8px] font-black uppercase tracking-tighter ${hasUnsavedChanges ? 'text-amber-600 font-black' : 'text-emerald-600'}`}>
+                {isSaving ? '同步中...' : (hasUnsavedChanges ? '待存檔' : '已存檔')}
               </span>
             </div>
 
@@ -269,9 +270,9 @@ const App: React.FC = () => {
               <span className="hidden sm:inline">列印 PDF</span>
             </button>
 
-            <button onClick={performSave} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-white bg-rose-500 hover:bg-rose-600 rounded-lg sm:rounded-xl transition-all shadow-md shadow-rose-100">
+            <button onClick={performSave} className={`flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-white rounded-lg sm:rounded-xl transition-all shadow-md ${hasUnsavedChanges ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200' : 'bg-slate-400 hover:bg-slate-500'}`}>
               <Save className="w-4 h-4" />
-              <span className="hidden sm:inline">儲存</span>
+              <span className="hidden sm:inline">手動儲存</span>
             </button>
 
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 sm:hidden text-slate-600">
