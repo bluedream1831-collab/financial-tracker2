@@ -24,6 +24,7 @@ import FinancialCharts from './components/FinancialCharts';
 import StressTestSection from './components/StressTestSection';
 import AssetLiabilityList from './components/AssetLiabilityList';
 import AIDiagnosisModal from './components/AIDiagnosisModal';
+import NotesSection from './components/NotesSection';
 
 const STORAGE_KEY = 'FINANCIAL_FREOM_DASHBOARD_DATA_V2';
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
   const [liabilities, setLiabilities] = useState<Liability[]>(initialLiabilities);
   const [incomeExpense, setIncomeExpense] = useState<IncomeExpense>(initialIncomeExpense);
+  const [notes, setNotes] = useState<string>('');
   const [stress, setStress] = useState<StressTestState>({
     marketCrash: 0,
     interestHike: 0,
@@ -84,6 +86,7 @@ const App: React.FC = () => {
         setAssets(parsed.assets || initialAssets);
         setLiabilities(parsed.liabilities || initialLiabilities);
         setIncomeExpense(parsed.incomeExpense || initialIncomeExpense);
+        setNotes(parsed.notes || '');
         if (parsed.lastSavedTime) setLastSavedTime(parsed.lastSavedTime);
       } catch (e) { console.error(e); }
     }
@@ -93,7 +96,7 @@ const App: React.FC = () => {
   const performSave = () => {
     setIsSaving(true);
     const now = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-    const dataToSave = { assets, liabilities, incomeExpense, lastSavedTime: now };
+    const dataToSave = { assets, liabilities, incomeExpense, notes, lastSavedTime: now };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     
     setTimeout(() => {
@@ -104,7 +107,7 @@ const App: React.FC = () => {
   };
 
   const handleExport = () => {
-    const dataToSave = { assets, liabilities, incomeExpense, timestamp: new Date().toISOString() };
+    const dataToSave = { assets, liabilities, incomeExpense, notes, timestamp: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -126,6 +129,7 @@ const App: React.FC = () => {
           setAssets(parsed.assets);
           setLiabilities(parsed.liabilities);
           setIncomeExpense(parsed.incomeExpense);
+          setNotes(parsed.notes || '');
           alert("數據匯入成功！");
           performSave();
         } else {
@@ -142,7 +146,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isLoaded) return;
     setHasUnsavedChanges(true);
-  }, [assets, liabilities, incomeExpense]);
+  }, [assets, liabilities, incomeExpense, notes]);
 
   const handleUpdateAsset = (id: string, field: string, value: any) => {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
@@ -366,6 +370,9 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* 備註區塊 */}
+        <NotesSection notes={notes} setNotes={setNotes} />
       </main>
 
       {showAIModal && (
