@@ -33,6 +33,7 @@ const AIDiagnosis: React.FC<AIDiagnosisProps> = ({ assets, liabilities, incomeEx
 
     setLoading(true);
     try {
+      // Create a new instance right before the call as per guidelines
       const ai = new GoogleGenAI({ apiKey: apiKey });
       
       const prompt = `
@@ -54,11 +55,13 @@ const AIDiagnosis: React.FC<AIDiagnosisProps> = ({ assets, liabilities, incomeEx
         請多使用條列式清單。
       `;
 
+      // Fix: Changed model to 'gemini-3-pro-preview' for complex financial reasoning tasks
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3-pro-preview',
         contents: prompt,
       });
 
+      // Fix: response.text is a property, handled correctly here
       if (response && response.text) {
         setReport(response.text);
       } else {

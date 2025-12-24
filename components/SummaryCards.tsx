@@ -23,13 +23,6 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-6">
       <Card 
-        title="真實淨資產" 
-        value={formatPreciseWan(data.netWorth)} 
-        icon={<Wallet className="w-3.5 h-3.5 sm:w-5 h-5" />}
-        color="rose"
-        description="總資產減總負債"
-      />
-      <Card 
         title="每月淨盈餘" 
         value={`${data.netCashFlow >= 0 ? '+' : ''}${formatPreciseWan(data.netCashFlow)}`} 
         icon={<Activity className="w-3.5 h-3.5 sm:w-5 h-5" />}
@@ -45,20 +38,27 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
         description="所有資產已領配息加總"
       />
       <Card 
-        title="FIRE 達成進度" 
-        value={`${Math.round(data.fireProgress)}%`} 
-        icon={<Target className="w-3.5 h-3.5 sm:w-5 h-5" />}
-        color="amber"
-        progress={data.fireProgress}
-        description={`目標 ${formatPreciseWan(fireGoal)}`}
-      />
-      <Card 
         title="累計總損益" 
         value={formatPreciseWan(data.totalProfit)} 
         icon={<DollarSign className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color={data.totalProfit >= 0 ? 'emerald' : 'rose-plain'}
         description={`總投報率 ${Math.round(data.roi)}%`}
         trend={data.totalProfit >= 0 ? 'up' : 'down'}
+      />
+      <Card 
+        title="真實淨資產" 
+        value={formatPreciseWan(data.netWorth)} 
+        icon={<Wallet className="w-3.5 h-3.5 sm:w-5 h-5" />}
+        color="rose"
+        description="總資產減總負債"
+      />
+      <Card 
+        title="FIRE 達成進度" 
+        value={`${Math.round(data.fireProgress)}%`} 
+        icon={<Target className="w-3.5 h-3.5 sm:w-5 h-5" />}
+        color="amber"
+        progress={data.fireProgress}
+        description={`目標 ${formatPreciseWan(fireGoal)}`}
       />
     </div>
   );
@@ -67,6 +67,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
 interface CardProps {
   title: string;
   value: string;
+  // Fix: Changed React.Node to React.ReactNode as 'Node' is not a member of the React namespace
   icon: React.ReactNode;
   color: 'rose' | 'rose-plain' | 'emerald' | 'amber';
   description: string;

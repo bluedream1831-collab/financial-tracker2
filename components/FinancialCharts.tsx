@@ -162,7 +162,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
                   wrapperStyle={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '900', paddingTop: '10px' }} 
                 />
                 
-                {/* 收入疊加 */}
+                {/* 收入疊加：薪資收入放在最底部，息收回報疊加其上 */}
                 <Bar name="薪資收入" dataKey="薪資收入" stackId="income" fill="#FB7185">
                   <LabelList 
                     dataKey="薪資收入" 
@@ -194,7 +194,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
                   />
                 </Bar>
 
-                {/* 支出疊加 (精確分拆利息) */}
+                {/* 支出疊加：固定月付放在最底部，利息支出疊加其上 */}
                 <Bar name="固定月付支出" dataKey="固定月付支出" stackId="expense" fill="#FDA4AF" />
                 <Bar name="戰略借款利息" dataKey="戰略借款利息" stackId="expense" fill="#F43F5E" radius={[4, 4, 0, 0]}>
                   <LabelList 
