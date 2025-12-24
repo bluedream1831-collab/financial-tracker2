@@ -32,7 +32,7 @@ const initialAssets: Asset[] = [
   { id: 'p2', name: '保單 B (法巴壽險)', type: 'investment', marketValue: 1477000, cost: 1500000, annualDividend: 0, realizedDividend: 139927, purchaseDate: '2024-10-01' },
   { id: 'p3', name: '保單 C (安達年金)', type: 'investment', marketValue: 1800000, cost: 1729999, annualDividend: 0, realizedDividend: 45305, purchaseDate: '2025-09-01' },
   { id: 'p4', name: '保單 D (安聯主力)', type: 'investment', marketValue: 3280000, cost: 3030000, annualDividend: 0, realizedDividend: 120148, purchaseDate: '2025-07-01' },
-  { id: 's1', name: '股票質押貸款 (標的)', type: 'investment', marketValue: 2450000, cost: 1890000, annualDividend: 0, realizedDividend: 127126, purchaseDate: '2024-01-01' },
+  { id: 's1', name: '股票質押貸款 (標的)', type: 'investment', marketValue: 1900000, cost: 1890000, annualDividend: 0, realizedDividend: 127126, purchaseDate: '2024-01-01' },
   { id: 'r1', name: '房產 (估值)', type: 'realestate', marketValue: 4700000, cost: 4700000, annualDividend: 0, realizedDividend: 0 },
   { id: 'c1', name: '活存備用金', type: 'cash', marketValue: 420000, cost: 420000, annualDividend: 0, realizedDividend: 0 },
 ];
@@ -52,7 +52,7 @@ const initialIncomeExpense: IncomeExpense = {
   monthlyPassiveIncome: 55000,
   monthlyMortgagePayment: 31000,
   monthlyCreditPayment: 13000,
-  monthlyBaseLivingExpense: 6000,
+  monthlyBaseLivingExpense: 18000, 
   fireGoal: 20000000,
   unusedCreditLimit: 360000,
 };
@@ -136,7 +136,6 @@ const App: React.FC = () => {
       }
     };
     reader.readAsText(file);
-    // 重置 input 以便下次選擇同一個檔案也能觸發
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -319,60 +318,13 @@ const App: React.FC = () => {
               totalRealizedDividend={financialData.totalRealizedDividend}
               onUpdateAsset={handleUpdateAsset} onUpdateLiability={handleUpdateLiability}
               onAddAsset={handleAddAsset} onDeleteAsset={handleDeleteAsset}
+              onUpdateIncomeExpense={handleUpdateIncomeExpense}
+              incomeExpense={incomeExpense}
+              netCashFlow={financialData.netCashFlow}
             />
           </div>
 
           <div className="xl:col-span-4 space-y-4 sm:space-y-6">
-            <div className="bg-gradient-to-br from-[#4c0519] to-[#831843] rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 text-white shadow-xl">
-              <h3 className="text-sm sm:text-lg font-black mb-4 sm:mb-6 flex items-center gap-3">
-                <Settings2 className="w-4 h-4 sm:w-5 h-5 text-rose-300" /> 戰略核心參數
-              </h3>
-              <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="bg-white/10 p-3 sm:p-4 rounded-xl border border-white/20">
-                    <label className="text-[8px] sm:text-[10px] font-black text-rose-200 uppercase mb-1 block tracking-widest text-center">月主動薪資</label>
-                    <div className="flex items-center">
-                      <span className="text-rose-300 text-xs mr-1">$</span>
-                      <input type="number" value={incomeExpense.monthlyActiveIncome} onChange={(e) => handleUpdateIncomeExpense('monthlyActiveIncome', Number(e.target.value))} className="w-full bg-transparent text-sm sm:text-xl font-black focus:outline-none border-b border-dashed border-rose-400" />
-                    </div>
-                  </div>
-                  <div className="bg-white/10 p-3 sm:p-4 rounded-xl border border-white/20">
-                    <label className="text-[8px] sm:text-[10px] font-black text-rose-200 uppercase mb-1 block tracking-widest text-center">月被動配息</label>
-                    <div className="flex items-center">
-                      <span className="text-rose-300 text-xs mr-1">$</span>
-                      <input type="number" value={incomeExpense.monthlyPassiveIncome} onChange={(e) => handleUpdateIncomeExpense('monthlyPassiveIncome', Number(e.target.value))} className="w-full bg-transparent text-sm sm:text-xl font-black focus:outline-none border-b border-dashed border-rose-400" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2 sm:space-y-3 bg-black/10 p-3 sm:p-4 rounded-xl">
-                  <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                    <span className="font-bold text-rose-100 tracking-wider">房貸月付:</span>
-                    <input type="number" value={incomeExpense.monthlyMortgagePayment} onChange={(e) => handleUpdateIncomeExpense('monthlyMortgagePayment', Number(e.target.value))} className="w-16 sm:w-24 bg-transparent text-right font-black border-b border-rose-400 focus:outline-none" />
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                    <span className="font-bold text-rose-100 tracking-wider">信貸月付:</span>
-                    <input type="number" value={incomeExpense.monthlyCreditPayment} onChange={(e) => handleUpdateIncomeExpense('monthlyCreditPayment', Number(e.target.value))} className="w-16 sm:w-24 bg-transparent text-right font-black border-b border-rose-400 focus:outline-none" />
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] sm:text-xs">
-                    <span className="font-bold text-rose-100 tracking-wider">生活開銷:</span>
-                    <input type="number" value={incomeExpense.monthlyBaseLivingExpense} onChange={(e) => handleUpdateIncomeExpense('monthlyBaseLivingExpense', Number(e.target.value))} className="w-16 sm:w-24 bg-transparent text-right font-black border-b border-rose-400 focus:outline-none" />
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] sm:text-xs pt-2 border-t border-white/5">
-                    <span className="font-bold text-rose-300 tracking-wider uppercase">戰略利息總計:</span>
-                    <span className="font-black text-rose-300 text-right">${parseFloat(financialData.expenseDetail.variableInterests.toFixed(0)).toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className={`p-4 rounded-xl border-2 transition-colors duration-500 ${financialData.netCashFlow >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
-                  <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-rose-200/60 mb-0.5 sm:mb-1">預估每月戰略盈餘</p>
-                  <span className={`text-xl sm:text-3xl font-black ${financialData.netCashFlow >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    ${parseFloat(financialData.netCashFlow.toFixed(0)).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-8 border border-orange-100 shadow-lg">
               <h3 className="text-sm sm:text-lg font-black text-slate-900 mb-4 sm:mb-6 flex items-center gap-3">
                 <ShieldCheck className="w-4 h-4 sm:w-5 h-5 text-rose-500" /> 備用金管理系統
