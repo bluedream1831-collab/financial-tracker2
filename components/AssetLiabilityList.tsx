@@ -20,7 +20,7 @@ interface AssetLiabilityListProps {
   stress: StressTestState;
   totalRealizedDividend?: number;
   onUpdateAsset: (id: string, field: string, value: any) => void;
-  onUpdateLiability: (id: string, field: 'principal' | 'interestRate', value: number) => void;
+  onUpdateLiability: (id: string, field: string, value: number) => void;
   onAddAsset: (asset: Asset, initialLoan?: number) => void;
   onDeleteAsset: (id: string) => void;
 }
@@ -93,6 +93,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
     let totalRoi = 0;
     let topUpLine = 0; 
     let dangerLine = 0; 
+    let individualMonthlyInterest = (l.principal * (l.interestRate + stress.interestHike)) / 12;
     
     if (adjustedAsset && originalAsset && l.principal > 0) {
       const simulatedValue = adjustedAsset.currentValue;
@@ -126,14 +127,17 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
             totalRoi = ((simulatedValue + originalAsset.realizedDividend - originalAsset.cost) / originalAsset.cost) * 100;
         }
     }
-    return { ...l, originalAsset, adjustedAsset, ratio, status, totalRoi, hasLiability: true, topUpLine, dangerLine, liabilityId: l.id };
+    return { ...l, originalAsset, adjustedAsset, ratio, status, totalRoi, hasLiability: true, topUpLine, dangerLine, liabilityId: l.id, individualMonthlyInterest };
   }), ...(isExpanded ? assets.filter(a => !liabilities.some(l => l.relatedAssetId === a.id)).map(a => ({
     id: `pure-${a.id}`, name: a.name, originalAsset: a, adjustedAsset: adjustedAssets.find(aa => aa.id === a.id),
     ratio: 0, status: 'safe' as const, totalRoi: a.cost > 0 ? (((adjustedAssets.find(aa => aa.id === a.id)?.currentValue || a.marketValue) + a.realizedDividend - a.cost) / a.cost) * 100 : 0,
-    hasLiability: false, principal: 0, interestRate: 0, type: 'credit' as const, topUpLine: 0, dangerLine: 0, liabilityId: null, maintenanceThreshold: 0, liquidateThreshold: 0
+    hasLiability: false, principal: 0, interestRate: 0, type: 'credit' as const, topUpLine: 0, dangerLine: 0, liabilityId: null, maintenanceThreshold: 0, liquidateThreshold: 0, individualMonthlyInterest: 0
   })) : [])];
 
-  const formatWan = (val: number) => `${Math.round(val / 10000).toLocaleString()}萬`;
+  const formatWan = (val: number) => {
+    const wan = val / 10000;
+    return `${parseFloat(wan.toFixed(2)).toLocaleString()}萬`;
+  };
 
   return (
     <div className="bg-white rounded-[1.2rem] sm:rounded-[2.5rem] border border-orange-100 shadow-xl overflow-hidden">
@@ -150,7 +154,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
             {totalRealizedDividend !== undefined && (
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-rose-50 rounded-full border border-rose-100">
                 <Coins className="w-3.5 h-3.5 text-rose-500" />
-                <span className="text-[10px] font-black text-rose-600 uppercase tracking-tight">戰略總息收: ${Math.round(totalRealizedDividend).toLocaleString()}</span>
+                <span className="text-[10px] font-black text-rose-600 uppercase tracking-tight">戰略總息收: ${parseFloat(totalRealizedDividend.toFixed(0)).toLocaleString()}</span>
               </div>
             )}
           </div>
@@ -191,7 +195,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
         </div>
       )}
 
-      {/* 手機版與列印版卡片列表 */}
+      {/* 手機版 */}
       <div className="lg:hidden print:block p-3 space-y-3">
         {tableData.map((item) => (
           <div key={item.id} className={`p-4 rounded-[1.2rem] border transition-all ${item.status === 'danger' ? 'border-rose-300 bg-rose-50 shadow-inner' : 'border-orange-50 bg-white shadow-sm'}`}>
@@ -200,15 +204,6 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                 <h4 className="font-black text-xs text-slate-800 uppercase tracking-tight">{item.name.replace(' 借款', '')}</h4>
                 {item.originalAsset?.purchaseDate && (
                   <div className="flex flex-col gap-0.5 mt-1">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-2.5 h-2.5 text-slate-300" />
-                      <input 
-                        type="date" 
-                        value={item.originalAsset.purchaseDate}
-                        onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'purchaseDate', e.target.value)}
-                        className="bg-transparent text-[9px] font-bold text-slate-400 focus:outline-none"
-                      />
-                    </div>
                     <span className="text-[9px] font-black text-blue-500">持有：{calculateHoldingDuration(item.originalAsset.purchaseDate)}</span>
                   </div>
                 )}
@@ -217,99 +212,44 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                 <div className={`px-2 py-0.5 rounded-full text-[8px] font-black text-white ${statusConfig[item.status].bg} shadow-sm`}>
                   {statusConfig[item.status].label}
                 </div>
-                {item.maintenanceThreshold > 0 && (
-                  <span className="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                    補繳{item.maintenanceThreshold * 100}% / 斷頭{item.liquidateThreshold * 100}%
-                  </span>
-                )}
               </div>
             </div>
 
             <div className="mt-2 flex items-center gap-1.5 mb-3">
                <span className={`text-[10px] font-black ${item.totalRoi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                總投報率 {Math.round(item.totalRoi)}%
+                總投報率 {parseFloat(item.totalRoi.toFixed(1))}%
               </span>
               <span className="text-[8px] font-bold text-slate-300">/</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase">目前市值 {formatWan(item.adjustedAsset?.currentValue || 0)}</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase">市值 {formatWan(item.adjustedAsset?.currentValue || 0)}</span>
             </div>
 
             <div className="space-y-2 mb-4">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
                     <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">資產市值</label>
-                    <input 
-                      type="number" 
-                      value={item.originalAsset?.marketValue || 0}
-                      onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'marketValue', Number(e.target.value))}
-                      className="w-full bg-transparent text-[11px] font-black text-slate-700 focus:outline-none"
-                    />
+                    <input type="number" value={item.originalAsset?.marketValue || 0} onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'marketValue', Number(e.target.value))} className="w-full bg-transparent text-[11px] font-black text-slate-700 focus:outline-none" />
                   </div>
                   <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-                    <label className="text-[8px] font-black text-slate-400 uppercase block mb-1 text-slate-400">原始投資成本</label>
-                    <input 
-                      type="number" 
-                      value={item.originalAsset?.cost || 0}
-                      onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'cost', Number(e.target.value))}
-                      className="w-full bg-transparent text-[11px] font-black text-slate-700 focus:outline-none"
-                    />
+                    <label className="text-[8px] font-black text-slate-400 uppercase block mb-1">已領總息收</label>
+                    <input type="number" value={item.originalAsset?.realizedDividend || 0} onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'realizedDividend', Number(e.target.value))} className="w-full bg-transparent text-[11px] font-black text-rose-600 focus:outline-none" />
                   </div>
-                </div>
-
-                <div className="bg-rose-50/50 p-2 rounded-lg border border-rose-100">
-                  <label className="text-[8px] font-black text-rose-400 uppercase block mb-1 flex items-center gap-1"><Coins className="w-2 h-2" /> 已領總息收</label>
-                  <input 
-                    type="number" 
-                    value={item.originalAsset?.realizedDividend || 0}
-                    onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'realizedDividend', Number(e.target.value))}
-                    className="w-full bg-transparent text-[11px] font-black text-rose-600 focus:outline-none"
-                  />
                 </div>
 
                 {item.hasLiability && item.liabilityId && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-100">
-                      <label className="text-[8px] font-black text-indigo-400 uppercase block mb-1 flex items-center gap-1"><DollarSign className="w-2 h-2" /> 借款本金</label>
-                      <input 
-                        type="number" 
-                        value={item.principal}
-                        onChange={(e) => onUpdateLiability(item.liabilityId!, 'principal', Number(e.target.value))}
-                        className="w-full bg-transparent text-[11px] font-black text-indigo-700 focus:outline-none"
-                      />
+                  <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[8px] font-black text-indigo-400 uppercase flex items-center gap-1"><DollarSign className="w-2 h-2" /> 借款本金</label>
+                      <input type="number" value={item.principal} onChange={(e) => onUpdateLiability(item.liabilityId!, 'principal', Number(e.target.value))} className="w-24 bg-transparent border-b border-indigo-200 text-right text-[11px] font-black text-indigo-700 focus:outline-none" />
                     </div>
-                    <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-100">
-                      <label className="text-[8px] font-black text-indigo-400 uppercase block mb-1 tracking-wider">年利率 (%)</label>
-                      <input 
-                        type="number" 
-                        step="0.01"
-                        value={Number((item.interestRate * 100).toFixed(2))}
-                        onChange={(e) => onUpdateLiability(item.liabilityId!, 'interestRate', Number(e.target.value) / 100)}
-                        className="w-full bg-transparent text-[11px] font-black text-indigo-700 focus:outline-none"
-                      />
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-1">
+                         <label className="text-[8px] font-black text-indigo-400 uppercase">年利率 (%)</label>
+                         <input type="number" step="0.01" value={Number((item.interestRate * 100).toFixed(2))} onChange={(e) => onUpdateLiability(item.liabilityId!, 'interestRate', Number(e.target.value) / 100)} className="w-10 bg-indigo-100 rounded text-center text-[10px] font-black text-indigo-700 focus:outline-none" />
+                      </div>
+                      <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 rounded">預估月息: ${parseFloat(item.individualMonthlyInterest.toFixed(0)).toLocaleString()}</span>
                     </div>
                   </div>
                 )}
-            </div>
-
-            {item.hasLiability && item.adjustedAsset && item.dangerLine > 0 && (
-              <div className="space-y-2 mb-3 pt-3 border-t border-slate-50">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">補繳警示線</span>
-                    <span className="text-[11px] font-black text-amber-500 tracking-tight">{formatWan(item.topUpLine)}</span>
-                  </div>
-                  <div className="flex flex-col text-right">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">斷頭危險線</span>
-                    <span className="text-[11px] font-black text-rose-500 tracking-tight">{formatWan(item.dangerLine)}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-between items-center pt-2 border-t border-slate-50 no-print">
-              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">資產項目管理</span>
-              <button onClick={() => onDeleteAsset(item.originalAsset?.id || '')} className="p-1.5 text-slate-200 hover:text-rose-500 active:scale-90 transition-all">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
         ))}
@@ -322,8 +262,8 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
             <tr className="bg-orange-50/5 border-b border-orange-50">
               <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">項目與持有期間</th>
               <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">市值 / 成本 / 已領息</th>
-              <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">借款本金 / 利率</th>
-              <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">風控警示線 (壓力)</th>
+              <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">借款本金 / 利率 (月息)</th>
+              <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">風控警示線</th>
               <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">風控狀態</th>
               <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right no-print">管理</th>
             </tr>
@@ -335,18 +275,10 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                   <div className="font-black text-slate-900">{item.name.replace(' 借款', '')}</div>
                   <div className="flex flex-col gap-1 mt-1.5">
                     {item.originalAsset?.purchaseDate && (
-                      <div className="flex items-center gap-2">
-                         <input 
-                          type="date" 
-                          value={item.originalAsset.purchaseDate}
-                          onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'purchaseDate', e.target.value)}
-                          className="bg-slate-50 border border-slate-100 rounded px-1 text-[10px] font-black text-slate-400 focus:outline-none"
-                        />
-                        <span className="text-[10px] font-black text-blue-500">持有：{calculateHoldingDuration(item.originalAsset.purchaseDate)}</span>
-                      </div>
+                      <span className="text-[10px] font-black text-blue-500">持有：{calculateHoldingDuration(item.originalAsset.purchaseDate)}</span>
                     )}
                     <div className={`text-[10px] font-bold ${item.totalRoi >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      總投報率: {Math.round(item.totalRoi)}% (含息)
+                      總投報率: {parseFloat(item.totalRoi.toFixed(1))}%
                     </div>
                   </div>
                 </td>
@@ -355,30 +287,11 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                   <div className="flex flex-col items-center gap-1.5">
                     <div className="flex items-center gap-1">
                         <span className="text-[8px] font-black text-slate-300 uppercase w-10 text-right">市值</span>
-                        <input 
-                            type="number" 
-                            value={item.originalAsset?.marketValue || 0}
-                            onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'marketValue', Number(e.target.value))}
-                            className="w-24 bg-transparent border-b border-dashed border-slate-200 text-sm font-black text-slate-900 text-center focus:outline-none"
-                        />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span className="text-[8px] font-black text-slate-300 uppercase w-10 text-right">成本</span>
-                        <input 
-                            type="number" 
-                            value={item.originalAsset?.cost || 0}
-                            onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'cost', Number(e.target.value))}
-                            className="w-24 bg-transparent text-[10px] font-bold text-slate-400 text-center focus:outline-none"
-                        />
+                        <input type="number" value={item.originalAsset?.marketValue || 0} onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'marketValue', Number(e.target.value))} className="w-24 bg-transparent border-b border-dashed border-slate-200 text-sm font-black text-slate-900 text-center focus:outline-none" />
                     </div>
                     <div className="flex items-center gap-1">
                         <span className="text-[8px] font-black text-rose-300 uppercase w-10 text-right">已領息</span>
-                        <input 
-                            type="number" 
-                            value={item.originalAsset?.realizedDividend || 0}
-                            onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'realizedDividend', Number(e.target.value))}
-                            className="w-24 bg-rose-50/50 rounded px-1 text-[10px] font-black text-rose-500 text-center focus:outline-none border-b border-rose-200"
-                        />
+                        <input type="number" value={item.originalAsset?.realizedDividend || 0} onChange={(e) => onUpdateAsset(item.originalAsset!.id, 'realizedDividend', Number(e.target.value))} className="w-24 bg-rose-50/50 rounded px-1 text-[10px] font-black text-rose-500 text-center focus:outline-none border-b border-rose-200" />
                     </div>
                   </div>
                 </td>
@@ -388,12 +301,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                     <div className="flex flex-col items-center gap-1.5">
                       <div className="flex items-center gap-1">
                           <span className="text-[8px] font-black text-indigo-300 uppercase w-8 text-right">本金</span>
-                          <input 
-                            type="number" 
-                            value={item.principal}
-                            onChange={(e) => onUpdateLiability(item.liabilityId!, 'principal', Number(e.target.value))}
-                            className="w-24 bg-transparent border-b border-dashed border-indigo-200 text-sm font-black text-indigo-700 text-center focus:outline-none"
-                          />
+                          <input type="number" value={item.principal} onChange={(e) => onUpdateLiability(item.liabilityId!, 'principal', Number(e.target.value))} className="w-24 bg-transparent border-b border-dashed border-indigo-200 text-sm font-black text-indigo-700 text-center focus:outline-none" />
                       </div>
                       <div className="flex items-center gap-1">
                           <span className="text-[8px] font-black text-indigo-300 uppercase w-8 text-right">利率</span>
@@ -408,6 +316,10 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                               <span className="text-[8px] font-black text-indigo-300">%</span>
                           </div>
                       </div>
+                      <div className="flex flex-col items-center bg-rose-50/50 p-1.5 rounded-lg border border-rose-100">
+                          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mb-0.5">預計月利息</span>
+                          <span className="text-[11px] font-black text-rose-600">${parseFloat(item.individualMonthlyInterest.toFixed(0)).toLocaleString()}</span>
+                      </div>
                     </div>
                   ) : <span className="text-slate-200">—</span>}
                 </td>
@@ -416,10 +328,10 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                   {item.topUpLine > 0 ? (
                     <div className="space-y-1.5">
                       <div className="text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded tracking-tighter border border-amber-100">
-                        補繳({item.maintenanceThreshold * 100}%): {formatWan(item.topUpLine)}
+                        補繳: {formatWan(item.topUpLine)}
                       </div>
                       <div className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded tracking-tighter border border-rose-100">
-                        斷頭({item.liquidateThreshold * 100}%): {formatWan(item.dangerLine)}
+                        斷頭: {formatWan(item.dangerLine)}
                       </div>
                     </div>
                   ) : <span className="text-slate-200">—</span>}
@@ -427,7 +339,6 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
 
                 <td className="px-6 py-6 text-center">
                   <div className={`px-4 py-1.5 rounded-xl text-[11px] font-black inline-flex items-center gap-2 text-white ${statusConfig[item.status].bg} shadow-sm`}>
-                    {item.status === 'safe' ? <ShieldCheck className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
                     {statusConfig[item.status].label}
                   </div>
                 </td>

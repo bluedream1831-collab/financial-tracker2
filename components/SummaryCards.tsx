@@ -14,19 +14,24 @@ interface SummaryCardsProps {
   fireGoal: number;
 }
 
+const formatPreciseWan = (val: number) => {
+  const wan = val / 10000;
+  return `${parseFloat(wan.toFixed(2)).toLocaleString()}萬`;
+};
+
 const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-6">
       <Card 
         title="真實淨資產" 
-        value={`$${Math.round(data.netWorth / 10000).toLocaleString()}萬`} 
+        value={formatPreciseWan(data.netWorth)} 
         icon={<Wallet className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color="rose"
         description="總資產減總負債"
       />
       <Card 
         title="每月淨盈餘" 
-        value={`${data.netCashFlow >= 0 ? '+' : ''}${Math.round(data.netCashFlow / 10000).toLocaleString()}萬`} 
+        value={`${data.netCashFlow >= 0 ? '+' : ''}${formatPreciseWan(data.netCashFlow)}`} 
         icon={<Activity className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color={data.netCashFlow >= 0 ? 'emerald' : 'rose-plain'}
         description="本月預估現金流"
@@ -34,7 +39,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
       />
       <Card 
         title="累計息收總額" 
-        value={`$${Math.round(data.totalRealizedDividend / 10000).toLocaleString()}萬`} 
+        value={formatPreciseWan(data.totalRealizedDividend)} 
         icon={<Coins className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color="amber"
         description="所有資產已領配息加總"
@@ -45,11 +50,11 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, fireGoal }) => {
         icon={<Target className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color="amber"
         progress={data.fireProgress}
-        description={`目標 ${Math.round(fireGoal / 10000).toLocaleString()}萬`}
+        description={`目標 ${formatPreciseWan(fireGoal)}`}
       />
       <Card 
         title="累計總損益" 
-        value={`$${Math.round(data.totalProfit / 10000).toLocaleString()}萬`} 
+        value={formatPreciseWan(data.totalProfit)} 
         icon={<DollarSign className="w-3.5 h-3.5 sm:w-5 h-5" />}
         color={data.totalProfit >= 0 ? 'emerald' : 'rose-plain'}
         description={`總投報率 ${Math.round(data.roi)}%`}

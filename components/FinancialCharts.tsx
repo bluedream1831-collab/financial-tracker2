@@ -14,17 +14,22 @@ import {
   Legend,
   LabelList
 } from 'recharts';
-import { Asset, Liability } from '../types';
+import { Asset, Liability, StressTestState } from '../types';
 
 interface FinancialChartsProps {
   assets: (Asset & { currentValue: number })[];
   liabilities: Liability[];
   incomeActive: number;
   incomePassive: number;
-  expenseTotal: number;
+  expenseDetail: {
+    fixedPayments: number;
+    variableInterests: number;
+    total: number;
+  };
+  stress: StressTestState;
 }
 
-const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, incomeActive, incomePassive, expenseTotal }) => {
+const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, incomeActive, incomePassive, expenseDetail, stress }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -55,15 +60,19 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
       name: '月收支分析',
       '薪資收入': incomeActive,
       '息收回報': incomePassive,
-      '總支出利息': expenseTotal,
+      '固定月付支出': expenseDetail.fixedPayments,
+      '戰略借款利息': expenseDetail.variableInterests,
     }
   ];
 
-  const formatWan = (val: number) => `${Math.round(val / 10000).toLocaleString()}萬`;
+  const formatWan = (val: number) => {
+    const wan = val / 10000;
+    return `${parseFloat(wan.toFixed(2)).toLocaleString()}萬`;
+  };
 
   const renderPieLabel = ({ name, percent, value }: any) => {
-    if (isMobile) return `${Math.round(percent * 100)}%`;
-    return `${name} ${formatWan(value)} (${Math.round(percent * 100)}%)`;
+    if (isMobile) return `${(percent * 100).toFixed(1)}%`;
+    return `${name} ${formatWan(value)} (${(percent * 100).toFixed(1)}%)`;
   };
 
   return (
@@ -77,7 +86,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
           <div className="h-[200px] sm:h-[280px] w-full relative">
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
               <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-tighter">總資產估值</span>
-              <span className="text-sm sm:text-lg font-black text-slate-900">${Math.round(totalAssetsValue / 10000).toLocaleString()}萬</span>
+              <span className="text-sm sm:text-lg font-black text-slate-900">${formatWan(totalAssetsValue)}</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -110,7 +119,7 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
           <div className="h-[200px] sm:h-[280px] w-full relative">
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
               <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-tighter">總負債金額</span>
-              <span className="text-sm sm:text-lg font-black text-slate-900">${Math.round(totalLiabilitiesValue / 10000).toLocaleString()}萬</span>
+              <span className="text-sm sm:text-lg font-black text-slate-900">${formatWan(totalLiabilitiesValue)}</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -150,9 +159,10 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
                 <Legend 
                   verticalAlign="bottom" 
                   iconType="circle" 
-                  wrapperStyle={{ fontSize: isMobile ? '8px' : '10px', fontWeight: '900', paddingTop: '10px' }} 
+                  wrapperStyle={{ fontSize: isMobile ? '8px' : '9px', fontWeight: '900', paddingTop: '10px' }} 
                 />
                 
+                {/* 收入疊加 */}
                 <Bar name="薪資收入" dataKey="薪資收入" stackId="income" fill="#FB7185">
                   <LabelList 
                     dataKey="薪資收入" 
@@ -184,11 +194,13 @@ const FinancialCharts: React.FC<FinancialChartsProps> = ({ assets, liabilities, 
                   />
                 </Bar>
 
-                <Bar name="總支出利息" dataKey="總支出利息" fill="#F43F5E" radius={[4, 4, 0, 0]}>
+                {/* 支出疊加 (精確分拆利息) */}
+                <Bar name="固定月付支出" dataKey="固定月付支出" stackId="expense" fill="#FDA4AF" />
+                <Bar name="戰略借款利息" dataKey="戰略借款利息" stackId="expense" fill="#F43F5E" radius={[4, 4, 0, 0]}>
                   <LabelList 
-                    dataKey="總支出利息" 
+                    dataKey="戰略借款利息" 
                     position="top" 
-                    formatter={formatWan} 
+                    formatter={() => formatWan(expenseDetail.total)} 
                     style={{ fill: '#F43F5E', fontSize: isMobile ? '8px' : '11px', fontWeight: '900' }} 
                   />
                 </Bar>

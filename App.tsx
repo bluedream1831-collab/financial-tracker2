@@ -103,6 +103,43 @@ const App: React.FC = () => {
     }, 600);
   };
 
+  const handleExport = () => {
+    const dataToSave = { assets, liabilities, incomeExpense, timestamp: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `FIRE_Dashboard_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string);
+        if (parsed.assets && parsed.liabilities && parsed.incomeExpense) {
+          setAssets(parsed.assets);
+          setLiabilities(parsed.liabilities);
+          setIncomeExpense(parsed.incomeExpense);
+          alert("數據匯入成功！");
+          performSave();
+        } else {
+          alert("檔案格式不正確，請確認是正確的備份檔。");
+        }
+      } catch (err) {
+        alert("讀取檔案失敗：" + err);
+      }
+    };
+    reader.readAsText(file);
+    // 重置 input 以便下次選擇同一個檔案也能觸發
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   useEffect(() => {
     if (!isLoaded) return;
     setHasUnsavedChanges(true);
@@ -112,7 +149,7 @@ const App: React.FC = () => {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
   };
 
-  const handleUpdateLiability = (id: string, field: 'principal' | 'interestRate', value: number) => {
+  const handleUpdateLiability = (id: string, field: string, value: number) => {
     setLiabilities(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l));
   };
 
@@ -157,28 +194,40 @@ const App: React.FC = () => {
       });
 
     const totalAssets = adjustedAssets.reduce((sum, a) => sum + a.currentValue, 0);
-    const totalLiabilities = liabilities.reduce((sum, l) => sum + l.principal, 0);
+    const totalLiabilitiesValue = liabilities.reduce((sum, l) => sum + l.principal, 0);
     const monthlyTotalIncome = incomeExpense.monthlyActiveIncome + incomeExpense.monthlyPassiveIncome;
     
-    const totalInterestExpense = liabilities.reduce((sum, l) => {
-        const effectiveRate = l.interestRate + stress.interestHike;
-        return sum + (l.principal * effectiveRate) / 12;
-    }, 0);
+    let assetLoanInterestOnly = 0;
+    let bankHikePressure = 0;
 
-    const monthlyTotalExpense = incomeExpense.monthlyMortgagePayment + incomeExpense.monthlyCreditPayment + incomeExpense.monthlyBaseLivingExpense + totalInterestExpense;
+    liabilities.forEach(l => {
+      const isBankLoan = l.type === 'mortgage' || l.type === 'credit';
+      const monthlyHikeInterest = (l.principal * stress.interestHike) / 12;
+      
+      if (isBankLoan) {
+        bankHikePressure += monthlyHikeInterest;
+      } else {
+        const fullRate = l.interestRate + stress.interestHike;
+        assetLoanInterestOnly += (l.principal * fullRate) / 12;
+      }
+    });
+
+    const fixedMonthlyPayments = incomeExpense.monthlyMortgagePayment + incomeExpense.monthlyCreditPayment + incomeExpense.monthlyBaseLivingExpense;
+    const monthlyTotalExpense = fixedMonthlyPayments + assetLoanInterestOnly + bankHikePressure;
     
     const totalCost = assets.reduce((sum, a) => sum + a.cost, 0);
     const totalRealizedDividend = assets.reduce((sum, a) => sum + a.realizedDividend, 0);
     const totalProfit = (assets.reduce((sum, a) => sum + a.marketValue, 0) + totalRealizedDividend) - totalCost;
+    
     const investmentLoans = liabilities.filter(l => l.type === 'policy' || l.type === 'pledge').reduce((sum, l) => sum + l.principal, 0);
     const netInvestmentEquity = adjustedAssets.filter(a => a.type === 'investment').reduce((sum, a) => sum + a.currentValue, 0) - investmentLoans;
     const totalLiquidity = netInvestmentEquity + (adjustedAssets.find(a => a.id === 'c1')?.currentValue || 0) + incomeExpense.unusedCreditLimit;
 
     return {
-      netWorth: totalAssets - totalLiabilities,
+      netWorth: totalAssets - totalLiabilitiesValue,
       monthlyPassiveIncome: incomeExpense.monthlyPassiveIncome,
       netCashFlow: monthlyTotalIncome - monthlyTotalExpense,
-      fireProgress: ((totalAssets - totalLiabilities) / incomeExpense.fireGoal) * 100,
+      fireProgress: ((totalAssets - totalLiabilitiesValue) / incomeExpense.fireGoal) * 100,
       totalProfit,
       roi: totalCost > 0 ? (totalProfit / totalCost) * 100 : 0,
       totalLiquidity,
@@ -186,7 +235,11 @@ const App: React.FC = () => {
       investmentEquityDetails,
       adjustedAssets,
       monthlyTotalIncomeActive: incomeExpense.monthlyActiveIncome,
-      monthlyTotalExpense,
+      expenseDetail: {
+        fixedPayments: fixedMonthlyPayments,
+        variableInterests: assetLoanInterestOnly + bankHikePressure,
+        total: monthlyTotalExpense
+      },
       totalRealizedDividend
     };
   }, [assets, liabilities, incomeExpense, stress]);
@@ -203,6 +256,17 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
+            
+            <div className="hidden lg:flex items-center gap-2 mr-2 border-r border-orange-100 pr-4">
+              <button onClick={handleExport} title="匯出 JSON 備份" className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                <Download className="w-4 h-4" />
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} title="匯入 JSON 備份" className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
+                <Upload className="w-4 h-4" />
+              </button>
+            </div>
+
             <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 ${isSaving ? 'bg-amber-50 border-amber-100' : (hasUnsavedChanges ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-100')}`}>
               {isSaving ? <Loader2 className="w-3 h-3 text-amber-500 animate-spin" /> : (hasUnsavedChanges ? <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> : <CheckCircle2 className="w-3 h-3 text-emerald-500" />)}
               <span className={`text-[8px] font-black uppercase tracking-tighter ${hasUnsavedChanges ? 'text-amber-600 font-black' : 'text-emerald-600'}`}>
@@ -242,7 +306,8 @@ const App: React.FC = () => {
               liabilities={liabilities}
               incomeActive={financialData.monthlyTotalIncomeActive}
               incomePassive={financialData.monthlyPassiveIncome}
-              expenseTotal={financialData.monthlyTotalExpense}
+              expenseDetail={financialData.expenseDetail}
+              stress={stress}
             />
             
             <StressTestSection stress={stress} setStress={setStress} />
@@ -293,12 +358,16 @@ const App: React.FC = () => {
                     <span className="font-bold text-rose-100 tracking-wider">生活開銷:</span>
                     <input type="number" value={incomeExpense.monthlyBaseLivingExpense} onChange={(e) => handleUpdateIncomeExpense('monthlyBaseLivingExpense', Number(e.target.value))} className="w-16 sm:w-24 bg-transparent text-right font-black border-b border-rose-400 focus:outline-none" />
                   </div>
+                  <div className="flex justify-between items-center text-[10px] sm:text-xs pt-2 border-t border-white/5">
+                    <span className="font-bold text-rose-300 tracking-wider uppercase">戰略利息總計:</span>
+                    <span className="font-black text-rose-300 text-right">${parseFloat(financialData.expenseDetail.variableInterests.toFixed(0)).toLocaleString()}</span>
+                  </div>
                 </div>
 
                 <div className={`p-4 rounded-xl border-2 transition-colors duration-500 ${financialData.netCashFlow >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'}`}>
                   <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-rose-200/60 mb-0.5 sm:mb-1">預估每月戰略盈餘</p>
                   <span className={`text-xl sm:text-3xl font-black ${financialData.netCashFlow >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    ${Math.round(financialData.netCashFlow).toLocaleString()}
+                    ${parseFloat(financialData.netCashFlow.toFixed(0)).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -322,14 +391,14 @@ const App: React.FC = () => {
                     <span className="text-[9px] sm:text-[10px] font-black text-slate-400 tracking-wider">投資權益淨值</span>
                     {showLiquidityDetail ? <ChevronUp className="w-3 h-3 text-slate-300" /> : <ChevronDown className="w-3 h-3 text-slate-300" />}
                   </div>
-                  <span className="text-xs sm:text-sm font-black text-rose-500">${Math.round(financialData.netInvestmentEquity).toLocaleString()}</span>
+                  <span className="text-xs sm:text-sm font-black text-rose-500">${parseFloat(financialData.netInvestmentEquity.toFixed(0)).toLocaleString()}</span>
                 </div>
                 {showLiquidityDetail && (
                   <div className="ml-3 space-y-1.5 border-l border-orange-100 pl-3 py-1 animate-in slide-in-from-top-1 duration-300">
                     {financialData.investmentEquityDetails.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-[8px] sm:text-[9px] font-bold text-slate-400">
                         <span>{item.name}</span>
-                        <span>${Math.round(item.netValue).toLocaleString()}</span>
+                        <span>${parseFloat(item.netValue.toFixed(0)).toLocaleString()}</span>
                       </div>
                     ))}
                   </div>
@@ -339,7 +408,7 @@ const App: React.FC = () => {
                      <Clock className="w-3 h-3 text-rose-400" />
                      <p className="text-[8px] font-black text-rose-400 uppercase tracking-widest">戰略總流動性</p>
                   </div>
-                  <span className="text-lg sm:text-2xl font-black text-slate-900 tracking-tighter">${Math.round(financialData.totalLiquidity).toLocaleString()}</span>
+                  <span className="text-lg sm:text-2xl font-black text-slate-900 tracking-tighter">${parseFloat(financialData.totalLiquidity.toFixed(0)).toLocaleString()}</span>
                 </div>
               </div>
             </div>
