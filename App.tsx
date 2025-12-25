@@ -103,6 +103,7 @@ const App: React.FC = () => {
       setIsSaving(false);
       setLastSavedTime(now);
       setHasUnsavedChanges(false);
+      setMobileMenuOpen(false);
     }, 600);
   };
 
@@ -115,6 +116,7 @@ const App: React.FC = () => {
     a.download = `FIRE_Dashboard_Backup_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setMobileMenuOpen(false);
   };
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,6 +143,7 @@ const App: React.FC = () => {
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setMobileMenuOpen(false);
   };
 
   useEffect(() => {
@@ -255,12 +258,13 @@ const App: React.FC = () => {
             <div className="bg-rose-500 p-1.5 rounded-lg shadow-sm">
               <Activity className="text-white w-4 h-4 sm:w-5 h-5" />
             </div>
-            <h1 className="text-xs sm:text-base font-black tracking-tighter uppercase">財務戰略核心</h1>
+            <h1 className="text-[10px] sm:text-base font-black tracking-tighter uppercase">財務戰略核心</h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
             
+            {/* 桌面版工具欄 */}
             <div className="hidden lg:flex items-center gap-2 mr-2 border-r border-orange-100 pr-4">
               <button onClick={handleExport} title="匯出 JSON 備份" className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">
                 <Download className="w-4 h-4" />
@@ -270,33 +274,67 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            <div className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 ${isSaving ? 'bg-amber-50 border-amber-100' : (hasUnsavedChanges ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-100')}`}>
+            {/* 儲存狀態指示 */}
+            <div className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full border transition-all duration-300 ${isSaving ? 'bg-amber-50 border-amber-100' : (hasUnsavedChanges ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-slate-50 border-slate-100')}`}>
               {isSaving ? <Loader2 className="w-3 h-3 text-amber-500 animate-spin" /> : (hasUnsavedChanges ? <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> : <CheckCircle2 className="w-3 h-3 text-emerald-500" />)}
-              <span className={`text-[8px] font-black uppercase tracking-tighter ${hasUnsavedChanges ? 'text-amber-600 font-black' : 'text-emerald-600'}`}>
+              <span className={`text-[8px] font-black uppercase tracking-tighter hidden sm:inline ${hasUnsavedChanges ? 'text-amber-600' : 'text-emerald-600'}`}>
                 {isSaving ? '同步中...' : (hasUnsavedChanges ? '待存檔' : '已存檔')}
               </span>
             </div>
 
-            <button onClick={() => setShowAIModal(true)} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-amber-600 border border-amber-100 bg-amber-50 hover:bg-amber-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">AI 診斷文本</span>
-            </button>
+            {/* 桌面版操作按鈕 */}
+            <div className="hidden md:flex items-center gap-2">
+              <button onClick={() => setShowAIModal(true)} className="flex items-center gap-1 px-4 py-1.5 text-[10px] font-black text-amber-600 border border-amber-100 bg-amber-50 hover:bg-amber-100 rounded-xl transition-all shadow-sm">
+                <FileText className="w-4 h-4" />
+                <span>AI 診斷文本</span>
+              </button>
 
-            <button onClick={() => window.print()} className="flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-rose-600 border border-rose-100 bg-rose-50 hover:bg-rose-100 rounded-lg sm:rounded-xl transition-all shadow-sm">
-              <Printer className="w-4 h-4" />
-              <span className="hidden sm:inline">列印 PDF</span>
-            </button>
+              <button onClick={() => window.print()} className="flex items-center gap-1 px-4 py-1.5 text-[10px] font-black text-rose-600 border border-rose-100 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all shadow-sm">
+                <Printer className="w-4 h-4" />
+                <span>列印 PDF</span>
+              </button>
 
-            <button onClick={performSave} className={`flex items-center gap-1 p-2 sm:px-4 py-1.5 text-[10px] font-black text-white rounded-lg sm:rounded-xl transition-all shadow-md ${hasUnsavedChanges ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200' : 'bg-slate-400 hover:bg-slate-500'}`}>
-              <Save className="w-4 h-4" />
-              <span className="hidden sm:inline">手動儲存</span>
-            </button>
+              <button onClick={performSave} className={`flex items-center gap-1 px-4 py-1.5 text-[10px] font-black text-white rounded-xl transition-all shadow-md ${hasUnsavedChanges ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200' : 'bg-slate-400 hover:bg-slate-500'}`}>
+                <Save className="w-4 h-4" />
+                <span>手動儲存</span>
+              </button>
+            </div>
 
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 sm:hidden text-slate-600">
+            {/* 手機版漢堡選單按鈕 */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="p-2 text-slate-600 lg:hidden hover:bg-slate-50 rounded-lg transition-colors"
+            >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+
+        {/* 手機版下拉選單內容 */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-orange-100 shadow-2xl animate-in slide-in-from-top-2 duration-300 z-[49]">
+            <div className="p-4 grid grid-cols-2 gap-3">
+              <button onClick={handleExport} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl text-[11px] font-black text-slate-600 border border-slate-100">
+                <Download className="w-4 h-4 text-rose-500" /> 資料匯出 (JSON)
+              </button>
+              <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl text-[11px] font-black text-slate-600 border border-slate-100">
+                <Upload className="w-4 h-4 text-emerald-500" /> 資料匯入 (JSON)
+              </button>
+              <button onClick={() => { setShowAIModal(true); setMobileMenuOpen(false); }} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl text-[11px] font-black text-amber-700 border border-amber-100">
+                <FileText className="w-4 h-4" /> AI 診斷文本
+              </button>
+              <button onClick={() => { window.print(); setMobileMenuOpen(false); }} className="flex items-center gap-3 p-3 bg-rose-50 rounded-xl text-[11px] font-black text-rose-700 border border-rose-100">
+                <Printer className="w-4 h-4" /> 列印 PDF
+              </button>
+              <button onClick={performSave} className="col-span-2 flex items-center justify-center gap-3 p-4 bg-rose-500 rounded-xl text-xs font-black text-white shadow-lg shadow-rose-100">
+                <Save className="w-5 h-5" /> 立即手動儲存資料
+              </button>
+            </div>
+            <div className="px-6 py-3 bg-slate-50/50 text-[9px] font-bold text-slate-400 text-center uppercase tracking-widest">
+              最後儲存時間: {lastSavedTime || '尚未儲存'}
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-8">
