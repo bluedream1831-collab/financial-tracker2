@@ -204,7 +204,7 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">投資項目與期間</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">市值 / 成本 / 已領息</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">借款本金 / 利率 (月息)</th>
-                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">風控狀態</th>
+                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">風控狀態 (LTV)</th>
                 <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right no-print">管理</th>
               </tr>
             </thead>
@@ -267,13 +267,32 @@ const AssetLiabilityList: React.FC<AssetLiabilityListProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-6 text-center">
-                    <div className={`px-4 py-1.5 rounded-xl text-[11px] font-black inline-flex items-center gap-2 text-white ${statusConfig[item.status].bg} shadow-sm mb-2`}>{statusConfig[item.status].label}</div>
-                    {item.topUpLine > 0 && (
-                      <div className="text-[8px] font-bold text-slate-400 space-y-0.5">
-                        <div>補繳線: {formatWan(item.topUpLine)}</div>
-                        <div className="text-rose-400">斷頭線: {formatWan(item.dangerLine)}</div>
+                    <div className="flex flex-col items-center">
+                      <div className={`px-4 py-1.5 rounded-xl text-[11px] font-black inline-flex items-center gap-2 text-white ${statusConfig[item.status].bg} shadow-sm mb-1.5`}>
+                        {statusConfig[item.status].label}
                       </div>
-                    )}
+                      
+                      {/* 當前借款比顯示 */}
+                      <div className="mb-2">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter block mb-0.5">當前借款佔比</span>
+                        <span className={`text-xs font-black ${(item.ratio * 100) > 60 ? 'text-rose-600' : 'text-slate-700'}`}>
+                          {parseFloat((item.ratio * 100).toFixed(1))}%
+                        </span>
+                      </div>
+
+                      {item.topUpLine > 0 && (
+                        <div className="text-[8px] font-bold text-slate-400 space-y-0.5 border-t border-rose-50 pt-1.5 w-full">
+                          <div className="flex justify-between">
+                            <span>補繳市值</span>
+                            <span>{formatWan(item.topUpLine)}</span>
+                          </div>
+                          <div className="flex justify-between text-rose-400">
+                            <span>斷頭市值</span>
+                            <span>{formatWan(item.dangerLine)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-6 text-right no-print">
                     <button onClick={() => onDeleteAsset(item.originalAsset?.id || '')} className="p-2 text-slate-200 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
